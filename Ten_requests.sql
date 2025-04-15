@@ -85,12 +85,17 @@ JOIN Author a ON b.author_id = a.author_id
 JOIN Reader r ON l.reader_id = r.reader_id
 ORDER BY loan_duration DESC;
 
--- 10. Полная статистика по жанрам, включая жанры без книг
+-- 10. Постраничный вывод книг с рейтингом популярности
 SELECT 
-    g.name AS genre, 
-    COUNT(b.book_id) AS books_count,
-    AVG(b.year) AS avg_publish_year
-FROM Genre g
-FULL JOIN Book b ON g.genre_id = b.genre_id
-GROUP BY g.name
-ORDER BY books_count DESC;
+    b.title,
+    a.name AS author,
+    p.name AS publisher,
+    COUNT(l.loan_id) AS loan_count,
+    RANK() OVER (ORDER BY COUNT(l.loan_id) DESC) AS popularity_rank
+FROM Book b
+JOIN Author a ON b.author_id = a.author_id
+JOIN Publisher p ON b.publisher_id = p.publisher_id
+LEFT JOIN Loan l ON b.book_id = l.book_id
+GROUP BY b.book_id, b.title, a.name, p.name
+ORDER BY loan_count DESC
+LIMIT 10 OFFSET 0;  -- Первая страница (первые 10 самых популярных книг)
